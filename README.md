@@ -9,4 +9,23 @@ brew install --HEAD ipb
 ipb doctor
 ```
 
-Requirements: macOS 27 (or macOS 26.4+) with Xcode 27 beta installed and selected for the build; an iOS 27 or iOS 26.6+ device paired over USB. See the ipb README for details.
+Requirements: an arm64 Mac running macOS 27 with Xcode 27 selected for builds, and an iOS 27+ device paired over USB. See the ipb README for details.
+
+## Preparing a versioned formula
+
+After the matching `ipb` release-candidate has passed the device gate and is
+published as a standard (non-prerelease) GitHub release, a tap maintainer can run **Actions → Prepare stable Homebrew
+formula → Run workflow** with its exact `vX.Y.Z` tag. The workflow checks the
+published release state, tag and mainline commit, build metadata, every packaged
+file hash, the archive checksum, and the versioned formula URL and checksum. It
+then installs and tests that formula on a disposable macOS 27 arm64 runner.
+
+On success it pushes only `Formula/ipb.rb` to a new
+`codex/release-vX.Y.Z` branch and prints a compare link. Review and merge that
+change manually. The workflow does not create a pull request or update `main`;
+stable installs continue to use the tap's default branch, and
+`brew install --HEAD ipb` remains available during candidate validation.
+
+The workflow needs only this repository's `GITHUB_TOKEN` with `contents: write`.
+It never creates or approves pull requests, and it fails rather than replacing
+an existing version branch.
