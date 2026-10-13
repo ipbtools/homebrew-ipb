@@ -1,0 +1,110 @@
+name: Prepare stable Homebrew formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published ipb version tag (for example v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stable-formula-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Verify candidate and prepare formula branch
+    runs-on: xcode-27
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.app/Contents/Developer
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_ANALYTICS: '1'
+    steps:
+      - name: Check out the tap default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Verify the runner toolchain
+        run: |
+          test "$(uname -m)" = arm64
+          sw_vers -productVersion | grep -E '^27\.'
+          xcodebuild -version | grep -E '^Xcode 27\.'
+          python3 --version
+          brew --version
+
+      - name: Validate release assets and prepare formula
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python3 scripts/prepare_release.py \
+            --tag "$RELEASE_TAG" \
+            --download-dir "$RUNNER_TEMP/ipb-release-assets" \
+            --output-dir "$RUNNER_TEMP/ipb-prepared"
+          cp "$RUNNER_TEMP/ipb-prepared/ipb.rb" Formula/ipb.rb
+
+      - name: Check formula syntax
+        run: ruby -c Formula/ipb.rb
+
+      - name: Install and test formula on the disposable runner
+        run: |
+          brew tap-new --no-git ipbtools/ci-package
+          test_formula="$(brew --repository ipbtools/ci-package)/Formula/ipb.rb"
+          mkdir -p "$(dirname "$test_formula")"
+          cp Formula/ipb.rb "$test_formula"
+          brew install --formula --verbose ipbtools/ci-package/ipb
+          brew test --verbose ipbtools/ci-package/ipb
+
+      - name: Prepare a review branch without replacing an existing branch
+        id: branch
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          branch="codex/release-${RELEASE_TAG}"
+          set +e
+          git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null 2>&1
+          ref_status=$?
+          set -e
+          if [ "$ref_status" -eq 0 ]; then
+            echo "Refusing to replace existing branch $branch" >&2
+            exit 1
+          fi
+          if [ "$ref_status" -ne 2 ]; then
+            echo "Could not safely determine whether $branch already exists" >&2
+            exit 1
+          fi
+          git add -- Formula/ipb.rb
+          changed="$(git diff --cached --name-only)"
+          test "$changed" = "Formula/ipb.rb"
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m "Prepare Homebrew formula for ${RELEASE_TAG}"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Push the prepared branch with the repository token
+        env:
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin https://github.com/ipbtools/homebrew-ipb.git
+          auth_header="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${auth_header}" \
+            push origin "HEAD:refs/heads/$BRANCH"
+
+      - name: Publish comparison link for human review
+        env:
+          BRANCH: ${{ steps.branch.outputs.branch }}
+        run: |
+          compare="https://github.com/ipbtools/homebrew-ipb/compare/main...${BRANCH}"
+          echo "Review and merge this formula-only change: $compare" | tee -a "$GITHUB_STEP_SUMMARY"
