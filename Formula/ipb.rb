@@ -4,9 +4,9 @@
 class Ipb < Formula
   desc "Drive a physical iPhone from a Mac like adb: tap, swipe, keys, home, screenshot, live stream, interactive mirror"
   homepage "https://github.com/ipbtools/ipb"
-  url "https://github.com/ipbtools/ipb/releases/download/v0.2.0/ipb-0.2.0-macos27-arm64.tar.gz"
-  version "0.2.0"
-  sha256 "262d7454e0e6363aac209b552fcabfe8c908b160e6bbf3c4ad80cc5417f46009"
+  url "https://github.com/ipbtools/ipb/releases/download/v0.3.0/ipb-0.3.0-macos27-arm64.tar.gz"
+  version "0.3.0"
+  sha256 "4908fff57fa36ad19b33bc91e7e901c7ed376622dd70dbe3017203fcc8296ede"
   head do
     url "https://github.com/ipbtools/ipb.git", branch: "main"
   end
