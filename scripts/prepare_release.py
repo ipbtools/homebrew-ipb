@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import tarfile
@@ -28,9 +29,11 @@ def version_from_tag(tag):
 
 
 def request_json(url):
-    request = urllib.request.Request(
-        url, headers={"Accept": "application/vnd.github+json", "User-Agent": "ipb-homebrew-release"}
-    )
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "ipb-homebrew-release"}
+    token = os.environ.get("GH_TOKEN")
+    if token and url.startswith("https://api.github.com/"):
+        headers["Authorization"] = "Bearer " + token
+    request = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.load(response)

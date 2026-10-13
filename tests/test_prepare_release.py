@@ -1,13 +1,14 @@
 import hashlib
 import io
 import json
+import os
 import tarfile
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.prepare_release import ReleaseError, validate_and_prepare
+from scripts.prepare_release import ReleaseError, request_json, validate_and_prepare
 
 
 TAG = "v1.2.3"
@@ -94,6 +95,28 @@ class PrepareReleaseTests(unittest.TestCase):
             formula.write_text(formula.read_text().replace('version "1.2.3"', 'version "9.9.9"'))
         with self.assertRaisesRegex(ReleaseError, "formula version"):
             self.validate(alter)
+
+
+class RequestAuthenticationTests(unittest.TestCase):
+    def request(self, url, environment):
+        with patch.dict(os.environ, environment, clear=True), patch(
+            "scripts.prepare_release.urllib.request.urlopen", return_value=io.BytesIO(b'{"ok": true}')
+        ) as opener:
+            self.assertEqual(request_json(url), {"ok": True})
+            return opener.call_args.args[0]
+
+    def test_metadata_request_uses_existing_workflow_token(self):
+        request = self.request("https://api.github.com/repos/ipbtools/ipb/releases/tags/v1.2.3",
+                               {"GH_TOKEN": "fixture-token"})
+        self.assertEqual(request.get_header("Authorization"), "Bearer fixture-token")
+
+    def test_public_metadata_request_without_token_still_works(self):
+        request = self.request("https://api.github.com/repos/ipbtools/ipb/releases/tags/v1.2.3", {})
+        self.assertIsNone(request.get_header("Authorization"))
+
+    def test_token_is_not_sent_to_other_hosts(self):
+        request = self.request("https://example.invalid/public.json", {"GH_TOKEN": "fixture-token"})
+        self.assertIsNone(request.get_header("Authorization"))
 
 
 if __name__ == "__main__":

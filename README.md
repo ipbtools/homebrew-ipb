@@ -30,5 +30,8 @@ stable installs continue to use the tap's default branch, and
 `brew install --HEAD ipb` remains available during candidate validation.
 
 The workflow needs only this repository's `GITHUB_TOKEN` with `contents: write`.
+Metadata requests authenticate with that existing token to avoid the shared runner's
+anonymous GitHub API limit. Public asset downloads carry no token. The local validator
+can optionally use `GH_TOKEN` for API metadata; it still works without one.
 It never creates or approves pull requests, and it fails rather than replacing
 an existing version branch.
