@@ -8,7 +8,9 @@ brew install ipbtools/ipb/ipb
 ipb doctor
 ```
 
-Stable installs use the pinned [v0.4.0 prebuilt archive](https://github.com/ipbtools/ipb/releases/tag/v0.4.0). Requirements: an arm64 Mac running macOS 27, compatible Xcode 27/CoreDevice development components at runtime, and an iOS 27+ device paired over USB with Developer Mode enabled. The optional `ipb ui` Python dependency is installed separately. See the ipb README for setup and verification limits.
+Stable installs use the pinned [v0.6.0 prebuilt archive](https://github.com/ipbtools/ipb/releases/tag/v0.6.0). Requirements: an arm64 Mac running macOS 27, compatible Xcode 27/CoreDevice development components at runtime, and an iOS 27+ device paired over USB with Developer Mode enabled. The optional `ipb ui` Python dependency is installed separately. See the ipb README for setup and verification limits.
+
+`ipb mcp` needs Python 3.11+; GUI MCP clients can set `IPB_MCP_PYTHON` to an absolute interpreter path. AX tools retain their separate optional host environment. See the [v0.6.0 MCP guide](https://github.com/ipbtools/ipb/blob/v0.6.0/docs/mcp.md) for tool and verification boundaries.
 
 Update a stable install with `ipb update` or `brew upgrade ipbtools/ipb/ipb`.
 `brew install --HEAD ipbtools/ipb/ipb` continues to build current main from source and requires Xcode 27 for building.
