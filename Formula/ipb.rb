@@ -4,9 +4,9 @@
 class Ipb < Formula
   desc "Drive a physical iPhone from a Mac like adb: tap, swipe, keys, home, screenshot, live stream, interactive mirror"
   homepage "https://github.com/ipbtools/ipb"
-  url "https://github.com/ipbtools/ipb/releases/download/v0.5.0/ipb-0.5.0-macos27-arm64.tar.gz"
-  version "0.5.0"
-  sha256 "7dfd6122943261ba30192329f2775faf5050370504a2fb1c394da87264846d0f"
+  url "https://github.com/ipbtools/ipb/releases/download/v0.6.0/ipb-0.6.0-macos27-arm64.tar.gz"
+  version "0.6.0"
+  sha256 "87797be026effeb6f092c868426bcb409da25c70bd8d0a85345c8ce20c553915"
   head do
     url "https://github.com/ipbtools/ipb.git", branch: "main"
   end
@@ -54,6 +54,9 @@ class Ipb < Formula
       For a source revision that includes `ipb ui`, Python 3.11+ and the optional
       dependency in #{share}/ipb/requirements-ax.txt are needed. See docs/ui.md;
       no Python packages or phone application are installed automatically.
+
+      `ipb mcp` also needs Python 3.11+. GUI MCP clients can set IPB_MCP_PYTHON
+      to an absolute interpreter path; AX tools still need the optional UI environment.
 
       Update later with `ipb update`.
     EOS
